@@ -23,57 +23,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  deploy-dry-run:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - uses: azure/setup-helm@v4
 
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
-
       - name: Helm lint
-        working-directory: D3-2_源代码与配置仓库
         run: helm lint infra/helm/nekocafe -f infra/helm/nekocafe/values-${{ inputs.environment }}.yaml
 
-      - name: Deploy canary
-        working-directory: D3-2_源代码与配置仓库
+      - name: Render manifests
         run: |
-          helm upgrade --install nekocafe infra/helm/nekocafe \
+          helm template nekocafe infra/helm/nekocafe \
             -n nekocafe-${{ inputs.environment }} \
-            --create-namespace \
             -f infra/helm/nekocafe/values-${{ inputs.environment }}.yaml \
             --set image.tag=${{ inputs.image_tag }} \
-            --set rollout.canaryWeight=${{ inputs.canary_weight }}
-          kubectl rollout status deploy/nekocafe-reservation-service -n nekocafe-${{ inputs.environment }} --timeout=120s
-          kubectl rollout status deploy/nekocafe-member-service -n nekocafe-${{ inputs.environment }} --timeout=120s
+            --set rollout.canaryWeight=${{ inputs.canary_weight }} \
+            > rendered-${{ inputs.environment }}.yaml
+          grep -E "kind: (Deployment|Service|Ingress|HorizontalPodAutoscaler)" rendered-${{ inputs.environment }}.yaml
 
-      - name: Smoke test
+      - name: Canary release plan
         run: |
-          echo "Run smoke tests against ingress or port-forward endpoint here."
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Image tag: ${{ inputs.image_tag }}"
+          echo "Canary weight: ${{ inputs.canary_weight }}%"
+          echo "Rollback command: helm rollback nekocafe -n nekocafe-${{ inputs.environment }}"
 
-      - name: Check SLO
-        env:
-          PROM_URL: ${{ secrets.PROM_URL }}
-        run: |
-          echo "Query Prometheus for P95 <= 350ms and error rate <= 1%."
-          echo "Production command would use ${PROM_URL}/api/v1/query."
-
-      - name: Promote to 100 percent
-        if: inputs.environment == 'prod'
-        working-directory: D3-2_源代码与配置仓库
-        run: |
-          helm upgrade --install nekocafe infra/helm/nekocafe \
-            -n nekocafe-prod \
-            -f infra/helm/nekocafe/values-prod.yaml \
-            --set image.tag=${{ inputs.image_tag }} \
-            --set rollout.canaryWeight=100
-
-      - name: Rollback on failure
-        if: failure()
-        run: helm rollback nekocafe -n nekocafe-${{ inputs.environment }} || true
+      - name: Upload rendered manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-${{ inputs.environment }}-manifests
+          path: rendered-${{ inputs.environment }}.yaml
