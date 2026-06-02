@@ -1,0 +1,45 @@
+image:
+  registry: ghcr.io/your-org/nekocafe
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+environment: dev
+
+rollout:
+  canaryWeight: 0
+
+services:
+  reservation:
+    name: reservation-service
+    port: 8080
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+  member:
+    name: member-service
+    port: 8080
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+ingress:
+  enabled: false
+  host: nekocafe.local
+
+env:
+  LOG_LEVEL: info
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+secrets:
+  databaseUrlSecretName: nekocafe-database
+  databaseUrlSecretKey: DATABASE_URL

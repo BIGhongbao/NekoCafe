@@ -1,0 +1,88 @@
+services:
+  reservation-service:
+    build:
+      context: ./services/reservation
+    image: nekocafe/reservation-service:0.1.0
+    environment:
+      SERVICE_NAME: reservation-service
+      SERVICE_VERSION: 0.1.0
+      PORT: "8080"
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://nekocafe:${POSTGRES_PASSWORD:-nekocafe_dev_only}@postgres:5432/reservation
+      MEMBER_SERVICE_URL: http://member-service:8080
+    ports:
+      - "8081:8080"
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  member-service:
+    build:
+      context: ./services/member
+    image: nekocafe/member-service:0.1.0
+    environment:
+      SERVICE_NAME: member-service
+      SERVICE_VERSION: 0.1.0
+      PORT: "8080"
+      DATABASE_URL: postgresql://nekocafe:${POSTGRES_PASSWORD:-nekocafe_dev_only}@postgres:5432/member
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: nekocafe
+      POSTGRES_USER: nekocafe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nekocafe_dev_only}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - reservation-service
+      - member-service
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres-data:

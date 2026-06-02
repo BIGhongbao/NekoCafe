@@ -1,0 +1,39 @@
+{{- if eq .Values.environment "prod" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "nekocafe.fullname" . }}-reservation-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "nekocafe.fullname" . }}-reservation-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "nekocafe.fullname" . }}-member-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "nekocafe.fullname" . }}-member-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+{{- end }}

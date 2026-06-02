@@ -1,0 +1,18 @@
+environment: staging
+
+image:
+  registry: ghcr.io/your-org/nekocafe
+  tag: "0.1.0-rc"
+
+rollout:
+  canaryWeight: 10
+
+services:
+  reservation:
+    replicas: 2
+  member:
+    replicas: 2
+
+ingress:
+  enabled: true
+  host: staging.nekocafe.local

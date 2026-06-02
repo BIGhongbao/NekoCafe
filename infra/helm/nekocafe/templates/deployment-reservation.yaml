@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nekocafe.fullname" . }}-reservation-service
+  labels:
+    {{- include "nekocafe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: reservation-service
+spec:
+  replicas: {{ .Values.services.reservation.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: reservation-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: reservation-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "{{ .Values.services.reservation.port }}"
+        nekocafe.io/canary-weight: "{{ .Values.rollout.canaryWeight }}"
+    spec:
+      serviceAccountName: {{ include "nekocafe.fullname" . }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: reservation-service
+          image: "{{ .Values.image.registry }}/reservation-service:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.reservation.port }}
+          env:
+            - name: SERVICE_NAME
+              value: reservation-service
+            - name: SERVICE_VERSION
+              value: {{ .Values.image.tag | quote }}
+            - name: ENVIRONMENT
+              value: {{ .Values.environment | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.env.OTEL_EXPORTER_OTLP_ENDPOINT | quote }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 10
+            periodSeconds: 3
+          resources:
+            {{- toYaml .Values.services.reservation.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

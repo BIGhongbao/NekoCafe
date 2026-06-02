@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "nekocafe.fullname" . }}-allow-http
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - {}

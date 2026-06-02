@@ -1,0 +1,32 @@
+environment: prod
+
+image:
+  registry: ghcr.io/your-org/nekocafe
+  tag: "0.1.0"
+
+rollout:
+  canaryWeight: 5
+
+services:
+  reservation:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+  member:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 150m
+        memory: 192Mi
+      limits:
+        cpu: 700m
+        memory: 384Mi
+
+ingress:
+  enabled: true
+  host: api.nekocafe.example.com

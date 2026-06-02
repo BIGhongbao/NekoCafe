@@ -1,0 +1,18 @@
+environment: dev
+
+image:
+  registry: ghcr.io/your-org/nekocafe
+  tag: "0.1.0-dev"
+
+rollout:
+  canaryWeight: 0
+
+services:
+  reservation:
+    replicas: 1
+  member:
+    replicas: 1
+
+ingress:
+  enabled: true
+  host: dev.nekocafe.local

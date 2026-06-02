@@ -1,0 +1,127 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(rate(nekocafe_http_requests_total[1m])) by (service)",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "title": "QPS by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(nekocafe_http_request_duration_seconds_bucket[5m])) by (le, service))",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "title": "P99 Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum(rate(nekocafe_http_requests_total{status=~\"5..\"}[3m])) by (service) / clamp_min(sum(rate(nekocafe_http_requests_total[3m])) by (service), 1)",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "title": "Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(nekocafe_http_requests_total) by (service, status)",
+          "legendFormat": "{{service}} {{status}}"
+        }
+      ],
+      "title": "Requests by Status",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "nekocafe",
+    "devops"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "NekoCafe DevOps Overview",
+  "uid": "nekocafe-devops",
+  "version": 1,
+  "weekStart": ""
+}

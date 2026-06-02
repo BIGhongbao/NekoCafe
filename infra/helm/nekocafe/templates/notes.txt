@@ -1,0 +1,7 @@
+NekoCafe has been deployed.
+
+Reservation service:
+  kubectl port-forward svc/{{ include "nekocafe.fullname" . }}-reservation-service 8081:8080 -n {{ .Release.Namespace }}
+
+Member service:
+  kubectl port-forward svc/{{ include "nekocafe.fullname" . }}-member-service 8082:8080 -n {{ .Release.Namespace }}

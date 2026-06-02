@@ -1,0 +1,37 @@
+groups:
+  - name: nekocafe-slo
+    rules:
+      - alert: NekoCafeHighErrorRate
+        expr: |
+          sum(rate(nekocafe_http_requests_total{status=~"5.."}[3m]))
+          /
+          clamp_min(sum(rate(nekocafe_http_requests_total[3m])), 1)
+          > 0.01
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NekoCafe error rate is above 1%"
+          description: "HTTP 5xx error rate is above the rollback threshold."
+
+      - alert: NekoCafeHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(nekocafe_http_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 0.35
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NekoCafe P95 latency is above 350ms"
+          description: "Core service latency has crossed the experiment QAS threshold."
+
+      - alert: NekoCafeNoTraffic
+        expr: sum(rate(nekocafe_http_requests_total[10m])) by (service) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No traffic observed for NekoCafe service"
+          description: "Prometheus is not observing requests for one service."
