@@ -80,6 +80,29 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "0"
 
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+          syft version
+
+      - name: Generate SBOM reservation-service
+        run: |
+          mkdir -p reports/sbom
+          syft nekocafe/reservation-service:${{ github.sha }} -o table | tee reports/sbom/reservation-service-sbom.txt
+          syft nekocafe/reservation-service:${{ github.sha }} -o spdx-json > reports/sbom/reservation-service.spdx.json
+
+      - name: Generate SBOM member-service
+        run: |
+          mkdir -p reports/sbom
+          syft nekocafe/member-service:${{ github.sha }} -o table | tee reports/sbom/member-service-sbom.txt
+          syft nekocafe/member-service:${{ github.sha }} -o spdx-json > reports/sbom/member-service.spdx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nekocafe-sbom
+          path: reports/sbom/
+
       - name: Integration test with docker compose
         run: |
           docker compose up -d --build
@@ -93,6 +116,8 @@ jobs:
         run: |
           reservation_size=$(docker image inspect nekocafe/reservation-service:${{ github.sha }} --format='{{.Size}}')
           member_size=$(docker image inspect nekocafe/member-service:${{ github.sha }} --format='{{.Size}}')
+          echo "reservation image size bytes: $reservation_size"
+          echo "member image size bytes: $member_size"
           echo "reservation_size=$reservation_size" >> "$GITHUB_OUTPUT"
           echo "member_size=$member_size" >> "$GITHUB_OUTPUT"
 
