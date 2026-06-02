@@ -67,14 +67,14 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy scan reservation-service
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: nekocafe/reservation-service:${{ github.sha }}
           severity: HIGH,CRITICAL
           exit-code: "0"
 
       - name: Trivy scan member-service
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: nekocafe/member-service:${{ github.sha }}
           severity: HIGH,CRITICAL
