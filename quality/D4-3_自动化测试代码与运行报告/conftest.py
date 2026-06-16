@@ -10,13 +10,25 @@ from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-D3_REPO = Path(
-    os.getenv(
-        "D3_REPO",
-        REPO_ROOT,
-    )
-)
+def find_d3_repo() -> Path:
+    env_repo = os.getenv("D3_REPO")
+    if env_repo:
+        return Path(env_repo)
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "services" / "reservation" / "src" / "main.py").exists():
+            return parent
+
+    for parent in here.parents:
+        candidate = parent / "实验三_DevOps流水线与容器化部署" / "实验三_产出" / "D3-2_源代码与配置仓库"
+        if (candidate / "services" / "reservation" / "src" / "main.py").exists():
+            return candidate
+
+    raise FileNotFoundError("Cannot locate D3-2 source repository. Set D3_REPO to the repository path.")
+
+
+D3_REPO = find_d3_repo()
 RESERVATION_MAIN = D3_REPO / "services" / "reservation" / "src" / "main.py"
 MEMBER_MAIN = D3_REPO / "services" / "member" / "src" / "main.py"
 
