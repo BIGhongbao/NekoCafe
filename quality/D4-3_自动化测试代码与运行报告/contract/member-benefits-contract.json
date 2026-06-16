@@ -1,0 +1,18 @@
+{
+  "consumer": "reservation-service",
+  "provider": "member-service",
+  "interactions": [
+    {
+      "description": "query member benefits before coupon decision",
+      "request": {
+        "method": "GET",
+        "path": "/members/m001/benefits"
+      },
+      "response": {
+        "status": 200,
+        "requiredFields": ["member_id", "level", "points", "coupons", "next_level_points"]
+      }
+    }
+  ]
+}
+

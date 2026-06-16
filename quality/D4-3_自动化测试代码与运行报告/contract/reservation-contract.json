@@ -1,0 +1,18 @@
+{
+  "consumer": "web-client",
+  "provider": "reservation-service",
+  "interactions": [
+    {
+      "description": "create reservation",
+      "request": {
+        "method": "POST",
+        "path": "/reservations"
+      },
+      "response": {
+        "status": 201,
+        "requiredFields": ["id", "member_id", "store_id", "table_id", "reserved_at", "party_size", "status", "created_at"]
+      }
+    }
+  ]
+}
+
