@@ -2,6 +2,8 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { sleep } from 'k6';
 
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:8081';
+
 export const options = {
   vus: 20,
   duration: '1m',
@@ -20,7 +22,7 @@ export default function () {
     party_size: 2
   });
   const params = { headers: { 'Content-Type': 'application/json' } };
-  const response = http.post('http://localhost:8081/reservations', payload, params);
+  const response = http.post(`${BASE_URL}/reservations`, payload, params);
   check(response, {
     'create reservation status is 201': (r) => r.status === 201
   });
